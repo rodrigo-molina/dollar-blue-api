@@ -5,8 +5,10 @@ import rodrigomolina.dolarblue.core.{CurrencyExchange, CurrencyId}
 
 trait CurrencyRepository {
 
-  def getCurrencyExchange(id: CurrencyId): IO[Either[Error, CurrencyExchange]]
+  def getCurrencyExchange(id: CurrencyId): IO[Either[CurrencyRepositoryError, CurrencyExchange]]
 
 }
 
-case class CurrencyNotFoundError() extends Error
+class CurrencyRepositoryError() extends Error
+case class CurrencyNotFoundError() extends CurrencyRepositoryError
+case class ConnectionError() extends CurrencyRepositoryError
