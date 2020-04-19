@@ -24,6 +24,7 @@ object Main extends App {
 
 object Configuration {
   val url = "https://www.dolarsi.com/api/api.php?type=valoresprincipales"
+
   val dollarClient = DollarSiClient(url)
   val currencyRepository = CurrencyRestRepository(dollarClient)
   val currencyService = CurrencyService(currencyRepository)
