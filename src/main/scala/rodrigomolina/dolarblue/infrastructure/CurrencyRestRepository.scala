@@ -2,7 +2,7 @@ package rodrigomolina.dolarblue.infrastructure
 
 import java.time.{ZoneOffset, ZonedDateTime}
 
-import cats.effect.IO
+import cats.effect.Sync
 import cats.implicits._
 import rodrigomolina.dolarblue.core.port.{ConnectionError, CurrencyNotFoundError, CurrencyRepository, CurrencyRepositoryError}
 import rodrigomolina.dolarblue.core.{Currency, CurrencyExchange, CurrencyId}
@@ -10,19 +10,19 @@ import rodrigomolina.dolarblue.core.{Currency, CurrencyExchange, CurrencyId}
 import scala.io.Source.fromURL
 import scala.util.{Failure, Success, Try}
 
-case class CurrencyRestRepository(dollarClient: DollarSiClient) extends CurrencyRepository {
+case class CurrencyRestRepository[F[_] : Sync](dollarClient: DollarSiClient[F]) extends CurrencyRepository[F] {
   val DollarBlueId = "DOLLAR_STREET"
 
-  override def getCurrencyExchange(id: CurrencyId): IO[Either[CurrencyRepositoryError, CurrencyExchange]] = id match {
+  override def getCurrencyExchange(id: CurrencyId): F[Either[CurrencyRepositoryError, CurrencyExchange]] = id match {
     case CurrencyId(DollarBlueId) => dollarClient.getDollarValue()
-    case _ => IO.pure {
+    case _ => Sync[F].pure {
       CurrencyNotFoundError().asLeft[CurrencyExchange]
     }
   }
 
 }
 
-case class DollarSiClient(baseUrl: String) {
+case class DollarSiClient[F[_] : Sync](baseUrl: String) {
 
   import spray.json._
   import DefaultJsonProtocol._
@@ -42,14 +42,14 @@ case class DollarSiClient(baseUrl: String) {
   implicit val casaFormat = jsonFormat1(Casa)
 
 
-  def getDollarValue(): IO[Either[CurrencyRepositoryError, CurrencyExchange]] = IO {
+  def getDollarValue(): F[Either[CurrencyRepositoryError, CurrencyExchange]] = Sync[F].pure {
     Try {
       val dollarSiResponse = fromURL(baseUrl).mkString
         .parseJson.asInstanceOf[JsArray]
         .elements.map(_.convertTo[Casa].casa)
 
       dollarSiResponse
-        .filter(_.nombre == "Dolar Blue")
+        .filter(_.nombre.toLowerCase == "dolar blue")
         .map(response =>
           CurrencyExchange(
             Currency(CurrencyId("PESO_AR"), "Peso Argentino"),
@@ -65,6 +65,5 @@ case class DollarSiClient(baseUrl: String) {
     }
 
   }
-
 
 }

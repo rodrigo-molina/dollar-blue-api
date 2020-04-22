@@ -1,11 +1,10 @@
 package rodrigomolina.dolarblue.core.port
 
-import cats.effect.IO
 import rodrigomolina.dolarblue.core.{CurrencyExchange, CurrencyId}
 
-trait CurrencyRepository {
+trait CurrencyRepository[F[_]] {
 
-  def getCurrencyExchange(id: CurrencyId): IO[Either[CurrencyRepositoryError, CurrencyExchange]]
+  def getCurrencyExchange(id: CurrencyId): F[Either[CurrencyRepositoryError, CurrencyExchange]]
 
 }
 

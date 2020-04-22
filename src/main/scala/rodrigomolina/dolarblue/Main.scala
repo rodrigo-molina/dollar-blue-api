@@ -1,33 +1,56 @@
 package rodrigomolina.dolarblue
 
-import cats.effect.IO
-import rodrigomolina.dolarblue.Configuration._
+import cats.Monad
+import cats.effect.{IO, Sync}
+import cats.syntax.flatMap._
+import cats.syntax.functor._
 import rodrigomolina.dolarblue.core.CurrencyId
 import rodrigomolina.dolarblue.core.usecase.CurrencyService
 import rodrigomolina.dolarblue.infrastructure.{CurrencyRestRepository, DollarSiClient}
 
 object Main extends App {
 
-  val printValue: String => IO[Unit] = (value: String) => IO {
-    println(s"This is the response: $value")
-  }
+  val url = "https://www.dolarsi.com/api/api.php?type=valoresprincipales"
 
-  val program: IO[Unit] =
-    for {
-      response <- currencyService.getCurrencyExchange(CurrencyId("DOLLAR_STREET"))
-      _ <- printValue(response.toString)
-    } yield ()
+  val dollarClient = DollarSiClient[IO](url)
+  val currencyRepository = CurrencyRestRepository[IO](dollarClient)
 
-  program.unsafeRunSync()
+  implicit val monad = Monad[IO]
+  implicit val console = new LiveConsole[IO]()
+  implicit val currencyService = CurrencyService[IO](currencyRepository)
+
+  TaglessMain
+    .run()
+    .unsafeRunSync()
 
 }
 
-object Configuration {
-  val url = "https://www.dolarsi.com/api/api.php?type=valoresprincipales"
+trait Console[F[_]] {
+  def putStrLn(line: String): F[Unit]
 
-  val dollarClient = DollarSiClient(url)
-  val currencyRepository = CurrencyRestRepository(dollarClient)
-  val currencyService = CurrencyService(currencyRepository)
+  def getStrLn: F[String]
+}
+
+object Console {
+  def apply[F[_]](implicit F: Console[F]): Console[F] = F
+}
+
+class LiveConsole[F[_] : Sync] extends Console[F] {
+  def putStrLn(line: String): F[Unit] =
+    Sync[F].pure(println(line))
+
+  def getStrLn: F[String] =
+    Sync[F].pure(scala.io.StdIn.readLine())
+}
+
+object TaglessMain {
+  def run[F[_] : Monad : Console : CurrencyService](): F[Unit] = {
+
+    for {
+      response <- CurrencyService[F].getCurrencyExchange(CurrencyId("DOLLAR_STREET"))
+      _ <- Console[F].putStrLn(response.toString)
+    } yield ()
+  }
 }
 
 
