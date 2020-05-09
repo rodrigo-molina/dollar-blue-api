@@ -63,8 +63,8 @@ case class DollarSiClient[F[_] : Sync](baseUrl: String, gateway: Gateway, clock:
       CurrencyExchange(
         ArgentinePeso,
         Dollar,
-        official.map(i => CurrencyExchangeValue(i.compra.replace(",", ".").toDouble, i.venta.replace(",", ".").toDouble)).get, // change this get
-        blue.map(i => CurrencyExchangeValue(i.compra.replace(",", ".").toDouble, i.venta.replace(",", ".").toDouble)),
+        official.map(i => CurrencyExchangeValue(parsetoDouble(i.compra), parsetoDouble(i.venta))).get, // FIXME: avoid .get statement by retuning typed error
+        blue.map(i => CurrencyExchangeValue(parsetoDouble(i.compra), parsetoDouble(i.venta))),
         clock.time)
 
     } match {
@@ -73,5 +73,8 @@ case class DollarSiClient[F[_] : Sync](baseUrl: String, gateway: Gateway, clock:
     }
 
   }
+
+  private def parsetoDouble(input: String): Double = input.replace(",", ".").toDouble
+
 
 }
