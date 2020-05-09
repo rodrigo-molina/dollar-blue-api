@@ -2,8 +2,8 @@ package rodrigomolina.dolarblue.infrastructure
 
 import cats.effect.Sync
 import cats.implicits._
+import rodrigomolina.dolarblue.core._
 import rodrigomolina.dolarblue.core.port.{ConnectionError, CurrencyNotFoundError, CurrencyRepository, CurrencyRepositoryError}
-import rodrigomolina.dolarblue.core.{Clock, Currency, CurrencyExchange, CurrencyId}
 import rodrigomolina.dolarblue.infrastructure.CurrencyRestRepository._
 
 import scala.util.{Failure, Success, Try}
@@ -50,21 +50,23 @@ case class DollarSiClient[F[_] : Sync](baseUrl: String, gateway: Gateway, clock:
 
   def getDollarValue(): F[Either[CurrencyRepositoryError, CurrencyExchange]] = Sync[F].pure {
     Try {
-      val dollarSiResponse = gateway.fromUrl(baseUrl)
+      val dollarSiResponse: List[Item] = gateway.fromUrl(baseUrl)
         .parseJson.asInstanceOf[JsArray]
         .elements.map(_.convertTo[Casa].casa)
+        .toList
 
-      dollarSiResponse
-        .filter(_.nombre.toLowerCase == "dolar blue")
-        .map(response =>
-          CurrencyExchange(
-            ArgentinePeso,
-            Dollar,
-            response.compra.replace(",", ".").toFloat,
-            response.venta.replace(",", ".").toFloat,
-            clock.time)
-        )
-        .head
+      val responseMap = dollarSiResponse.map(i => (i.nombre.toLowerCase, i)).toMap
+
+      val official: Option[Item] = responseMap.get("dolar oficial")
+      val blue: Option[Item] = responseMap.get("dolar blue")
+
+      CurrencyExchange(
+        ArgentinePeso,
+        Dollar,
+        official.map(i => CurrencyExchangeValue(i.compra.replace(",", ".").toFloat, i.venta.replace(",", ".").toFloat)).get, // change this get
+        blue.map(i => CurrencyExchangeValue(i.compra.replace(",", ".").toFloat, i.venta.replace(",", ".").toFloat)),
+        clock.time)
+
     } match {
       case Success(value) => value.asRight[CurrencyRepositoryError]
       case Failure(_) => ConnectionError().asLeft[CurrencyExchange]

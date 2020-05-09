@@ -8,7 +8,7 @@ import org.mockito.ArgumentMatchers.any
 import org.mockito.MockitoSugar
 import org.scalatest.funsuite.AnyFunSuite
 import rodrigomolina.dolarblue.core.port.CurrencyRepositoryError
-import rodrigomolina.dolarblue.core.{Clock, Currency, CurrencyExchange, CurrencyId}
+import rodrigomolina.dolarblue.core.{Clock, Currency, CurrencyExchange, CurrencyExchangeValue, CurrencyId}
 import rodrigomolina.dolarblue.infrastructure.CurrencyRestRepository._
 import rodrigomolina.dolarblue.infrastructure.{CurrencyRestRepository, DollarSiClient, Gateway}
 
@@ -35,8 +35,8 @@ class CurrencyRepositoryTest extends AnyFunSuite with MockitoSugar {
       CurrencyExchange(
         from = ArgentinePeso,
         to = Dollar,
-        buyValue = 112.0,
-        sellValue = 122.0,
+        official = CurrencyExchangeValue(64.62999725341797, 69.62999725341797),
+        blue = CurrencyExchangeValue(112.0, 122.0).some,
         queryDate = fromString("2020-05-09T21:33:05.878Z")).asRight[CurrencyRepositoryError])
   }
 
