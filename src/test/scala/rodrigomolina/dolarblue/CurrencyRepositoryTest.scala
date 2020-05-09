@@ -35,7 +35,7 @@ class CurrencyRepositoryTest extends AnyFunSuite with MockitoSugar {
       CurrencyExchange(
         from = ArgentinePeso,
         to = Dollar,
-        official = CurrencyExchangeValue(64.62999725341797, 69.62999725341797),
+        official = CurrencyExchangeValue(64.63, 69.63),
         blue = CurrencyExchangeValue(112.0, 122.0).some,
         queryDate = fromString("2020-05-09T21:33:05.878Z")).asRight[CurrencyRepositoryError])
   }

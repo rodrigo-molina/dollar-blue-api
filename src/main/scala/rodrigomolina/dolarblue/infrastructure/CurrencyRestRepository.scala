@@ -63,8 +63,8 @@ case class DollarSiClient[F[_] : Sync](baseUrl: String, gateway: Gateway, clock:
       CurrencyExchange(
         ArgentinePeso,
         Dollar,
-        official.map(i => CurrencyExchangeValue(i.compra.replace(",", ".").toFloat, i.venta.replace(",", ".").toFloat)).get, // change this get
-        blue.map(i => CurrencyExchangeValue(i.compra.replace(",", ".").toFloat, i.venta.replace(",", ".").toFloat)),
+        official.map(i => CurrencyExchangeValue(i.compra.replace(",", ".").toDouble, i.venta.replace(",", ".").toDouble)).get, // change this get
+        blue.map(i => CurrencyExchangeValue(i.compra.replace(",", ".").toDouble, i.venta.replace(",", ".").toDouble)),
         clock.time)
 
     } match {
