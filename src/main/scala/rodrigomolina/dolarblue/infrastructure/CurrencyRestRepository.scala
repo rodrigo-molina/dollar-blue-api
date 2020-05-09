@@ -1,28 +1,34 @@
 package rodrigomolina.dolarblue.infrastructure
 
-import java.time.{ZoneOffset, ZonedDateTime}
-
 import cats.effect.Sync
 import cats.implicits._
 import rodrigomolina.dolarblue.core.port.{ConnectionError, CurrencyNotFoundError, CurrencyRepository, CurrencyRepositoryError}
-import rodrigomolina.dolarblue.core.{Currency, CurrencyExchange, CurrencyId}
+import rodrigomolina.dolarblue.core.{Clock, Currency, CurrencyExchange, CurrencyId}
+import rodrigomolina.dolarblue.infrastructure.CurrencyRestRepository._
 
-import scala.io.Source.fromURL
 import scala.util.{Failure, Success, Try}
 
-case class CurrencyRestRepository[F[_] : Sync](dollarClient: DollarSiClient[F]) extends CurrencyRepository[F] {
-  val DollarBlueId = "DOLLAR_STREET"
-
-  override def getCurrencyExchange(id: CurrencyId): F[Either[CurrencyRepositoryError, CurrencyExchange]] = id match {
-    case CurrencyId(DollarBlueId) => dollarClient.getDollarValue()
-    case _ => Sync[F].pure {
-      CurrencyNotFoundError().asLeft[CurrencyExchange]
-    }
-  }
-
+object CurrencyRestRepository {
+  val Dollar = Currency(CurrencyId("DOLLAR"), "Dollar")
+  val ArgentinePeso = Currency(CurrencyId("PESO_ARGENTINE"), "Peso Argentino")
 }
 
-case class DollarSiClient[F[_] : Sync](baseUrl: String) {
+case class CurrencyRestRepository[F[_] : Sync](dollarClient: DollarSiClient[F]) extends CurrencyRepository[F] {
+
+  override def getCurrencyExchange(from: CurrencyId, to: CurrencyId): F[Either[CurrencyRepositoryError, CurrencyExchange]] = from match {
+    case Dollar.id => to match {
+      case ArgentinePeso.id => dollarClient.getDollarValue
+      case _ => notFound
+    }
+    case _ => notFound
+  }
+
+  private def notFound: F[Either[CurrencyRepositoryError, CurrencyExchange]] = Sync[F].pure {
+    CurrencyNotFoundError().asLeft[CurrencyExchange]
+  }
+}
+
+case class DollarSiClient[F[_] : Sync](baseUrl: String, gateway: Gateway, clock: Clock) {
 
   import spray.json._
   import DefaultJsonProtocol._
@@ -44,7 +50,7 @@ case class DollarSiClient[F[_] : Sync](baseUrl: String) {
 
   def getDollarValue(): F[Either[CurrencyRepositoryError, CurrencyExchange]] = Sync[F].pure {
     Try {
-      val dollarSiResponse = fromURL(baseUrl).mkString
+      val dollarSiResponse = gateway.fromUrl(baseUrl)
         .parseJson.asInstanceOf[JsArray]
         .elements.map(_.convertTo[Casa].casa)
 
@@ -52,11 +58,11 @@ case class DollarSiClient[F[_] : Sync](baseUrl: String) {
         .filter(_.nombre.toLowerCase == "dolar blue")
         .map(response =>
           CurrencyExchange(
-            Currency(CurrencyId("PESO_AR"), "Peso Argentino"),
-            Currency(CurrencyId("DOLLAR_STREET"), "Dollar Blue"),
+            ArgentinePeso,
+            Dollar,
             response.compra.replace(",", ".").toFloat,
             response.venta.replace(",", ".").toFloat,
-            ZonedDateTime.now(ZoneOffset.UTC))
+            clock.time)
         )
         .head
     } match {

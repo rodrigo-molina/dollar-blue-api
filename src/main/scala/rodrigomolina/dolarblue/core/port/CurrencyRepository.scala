@@ -4,7 +4,7 @@ import rodrigomolina.dolarblue.core.{CurrencyExchange, CurrencyId}
 
 trait CurrencyRepository[F[_]] {
 
-  def getCurrencyExchange(id: CurrencyId): F[Either[CurrencyRepositoryError, CurrencyExchange]]
+  def getCurrencyExchange(from: CurrencyId, to: CurrencyId): F[Either[CurrencyRepositoryError, CurrencyExchange]]
 
 }
 

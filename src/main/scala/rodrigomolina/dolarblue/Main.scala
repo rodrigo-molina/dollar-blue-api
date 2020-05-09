@@ -4,15 +4,16 @@ import cats.Monad
 import cats.effect.{IO, Sync}
 import cats.syntax.flatMap._
 import cats.syntax.functor._
-import rodrigomolina.dolarblue.core.CurrencyId
+import rodrigomolina.dolarblue.infrastructure.CurrencyRestRepository._
+import rodrigomolina.dolarblue.core.{Clock}
 import rodrigomolina.dolarblue.core.usecase.CurrencyService
-import rodrigomolina.dolarblue.infrastructure.{CurrencyRestRepository, DollarSiClient}
+import rodrigomolina.dolarblue.infrastructure.{CurrencyRestRepository, DollarSiClient, HttpGateway}
 
 object Main extends App {
 
   val url = "https://www.dolarsi.com/api/api.php?type=valoresprincipales"
 
-  val dollarClient = DollarSiClient[IO](url)
+  val dollarClient = DollarSiClient[IO](url, HttpGateway(), new Clock())
   val currencyRepository = CurrencyRestRepository[IO](dollarClient)
 
   implicit val monad = Monad[IO]
@@ -47,7 +48,7 @@ object TaglessMain {
   def run[F[_] : Monad : Console : CurrencyService](): F[Unit] = {
 
     for {
-      response <- CurrencyService[F].getCurrencyExchange(CurrencyId("DOLLAR_STREET"))
+      response <- CurrencyService[F].getCurrencyExchange(Dollar.id, ArgentinePeso.id)
       _ <- Console[F].putStrLn(response.toString)
     } yield ()
   }

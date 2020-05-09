@@ -8,6 +8,6 @@ case class Currency(id: CurrencyId, name: String)
 
 case class CurrencyExchange(from: Currency,
                             to: Currency,
-                            buyValue: Float,
-                            sellValue: Float,
+                            buyValue: Double,
+                            sellValue: Double,
                             queryDate: ZonedDateTime)

@@ -10,3 +10,5 @@ libraryDependencies += "org.typelevel" %% "cats-core" % "2.0.0"
 libraryDependencies += "org.typelevel" %% "cats-effect" % "2.1.3"
 libraryDependencies += "io.spray" %%  "spray-json" % "1.3.5"
 
+libraryDependencies += "org.scalatest" % "scalatest_2.13" % "3.1.1" % "test"
+libraryDependencies += "org.mockito" %% "mockito-scala" % "1.14.0"

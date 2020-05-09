@@ -5,7 +5,7 @@ import rodrigomolina.dolarblue.core.{CurrencyExchange, CurrencyId}
 
 case class CurrencyService[F[_]](currencyRepository: CurrencyRepository[F]) {
 
-  def getCurrencyExchange(id: CurrencyId): F[Either[CurrencyRepositoryError, CurrencyExchange]] = currencyRepository.getCurrencyExchange(id)
+  def getCurrencyExchange(from: CurrencyId, to: CurrencyId): F[Either[CurrencyRepositoryError, CurrencyExchange]] = currencyRepository.getCurrencyExchange(from, to)
 }
 
 object CurrencyService {
