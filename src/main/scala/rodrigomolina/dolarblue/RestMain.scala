@@ -1,6 +1,7 @@
 package rodrigomolina.dolarblue
 
 import cats.Monad
+import cats.data.Kleisli
 import cats.effect._
 import org.http4s.HttpRoutes
 import org.http4s.dsl.io._
@@ -28,12 +29,15 @@ object RestMain extends IOApp {
 
 
     val currencyRoutes = HttpRoutes.of[IO] {
-      case GET -> Root / "currencies" /  currentId / "to" / toId =>
-        currencyService.getCurrencyExchange(CurrencyId(currentId), CurrencyId(toId)).flatMap(_ match {
-          case Right(r) => Ok(r)
-          case Left(_: CurrencyNotFoundError) => NotFound("Currency not found.")
-          case Left(_: ConnectionError) => FailedDependency("Could not get information from external provider.")
-        })
+      case GET -> Root / "currencies" / currentId / "to" / toId =>
+        for {
+          exchangeResponse <- currencyService.getCurrencyExchange(CurrencyId(currentId), CurrencyId(toId))
+          response         <- exchangeResponse match {
+                                case Right(r) => Ok(r)
+                                case Left(_: CurrencyNotFoundError) => NotFound("Currency not found.")
+                                case Left(_: ConnectionError) => FailedDependency("Could not get information from external provider.")
+                              }
+        } yield response
     }.orNotFound
 
 
