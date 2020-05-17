@@ -1,8 +1,10 @@
 package rodrigomolina.dolarblue.infrastructure
 
+import cats.Monad
 import cats.effect.Sync
 import cats.implicits._
-import rodrigomolina.dolarblue.core._
+import rodrigomolina.dolarblue.core.{entity, _}
+import rodrigomolina.dolarblue.core.entity.{Clock, Currency, CurrencyExchange, CurrencyExchangeValue, CurrencyId}
 import rodrigomolina.dolarblue.core.port.{ConnectionError, CurrencyNotFoundError, CurrencyRepository, CurrencyRepositoryError}
 import rodrigomolina.dolarblue.infrastructure.CurrencyRestRepository._
 
@@ -13,7 +15,7 @@ object CurrencyRestRepository {
   val ArgentinePeso = Currency(CurrencyId("PESO_ARGENTINE"), "Peso Argentino")
 }
 
-case class CurrencyRestRepository[F[_] : Sync](dollarClient: DollarSiClient[F]) extends CurrencyRepository[F] {
+case class CurrencyRestRepository[F[_] : Sync: Monad](dollarClient: DollarSiClient[F]) extends CurrencyRepository[F] {
 
   override def getCurrencyExchange(from: CurrencyId, to: CurrencyId): F[Either[CurrencyRepositoryError, CurrencyExchange]] = from match {
     case Dollar.id => to match {
@@ -60,7 +62,7 @@ case class DollarSiClient[F[_] : Sync](baseUrl: String, gateway: Gateway, clock:
       val official: Option[Item] = responseMap.get("dolar oficial")
       val blue: Option[Item] = responseMap.get("dolar blue")
 
-      CurrencyExchange(
+      entity.CurrencyExchange(
         ArgentinePeso,
         Dollar,
         official.map(i => CurrencyExchangeValue(parsetoDouble(i.compra), parsetoDouble(i.venta))).get, // FIXME: avoid .get statement by retuning typed error

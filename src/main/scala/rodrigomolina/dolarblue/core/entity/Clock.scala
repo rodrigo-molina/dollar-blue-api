@@ -1,4 +1,4 @@
-package rodrigomolina.dolarblue.core
+package rodrigomolina.dolarblue.core.entity
 
 import java.time.{ZoneOffset, ZonedDateTime}
 

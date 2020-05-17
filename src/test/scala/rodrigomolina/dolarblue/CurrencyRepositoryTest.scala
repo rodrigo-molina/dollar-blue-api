@@ -8,7 +8,7 @@ import org.mockito.ArgumentMatchers.any
 import org.mockito.MockitoSugar
 import org.scalatest.funsuite.AnyFunSuite
 import rodrigomolina.dolarblue.core.port.CurrencyRepositoryError
-import rodrigomolina.dolarblue.core.{Clock, Currency, CurrencyExchange, CurrencyExchangeValue, CurrencyId}
+import rodrigomolina.dolarblue.core.entity.{Clock, CurrencyExchange, CurrencyExchangeValue}
 import rodrigomolina.dolarblue.infrastructure.CurrencyRestRepository._
 import rodrigomolina.dolarblue.infrastructure.{CurrencyRestRepository, DollarSiClient, Gateway}
 

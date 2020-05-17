@@ -1,57 +1,31 @@
 package rodrigomolina.dolarblue
 
-import cats.Monad
-import cats.effect.{IO, Sync}
-import cats.syntax.flatMap._
-import cats.syntax.functor._
-import rodrigomolina.dolarblue.infrastructure.CurrencyRestRepository._
-import rodrigomolina.dolarblue.core.{Clock}
+import cats.effect._
+import org.http4s.server.blaze._
+import rodrigomolina.dolarblue.core.entity
 import rodrigomolina.dolarblue.core.usecase.CurrencyService
-import rodrigomolina.dolarblue.infrastructure.{CurrencyRestRepository, DollarSiClient, HttpGateway}
+import rodrigomolina.dolarblue.infrastructure.{CurrencyEndpoint, CurrencyRestRepository, DollarSiClient, HttpGateway}
 
-object Main extends App {
 
-  val url = "https://www.dolarsi.com/api/api.php?type=valoresprincipales"
+object Main extends IOApp {
 
-  val dollarClient = DollarSiClient[IO](url, HttpGateway(), new Clock())
-  val currencyRepository = CurrencyRestRepository[IO](dollarClient)
+  def run(args: List[String]): IO[ExitCode] = {
+    val url = "https://www.dolarsi.com/api/api.php?type=valoresprincipales"
 
-  implicit val monad = Monad[IO]
-  implicit val console = new LiveConsole[IO]()
-  implicit val currencyService = CurrencyService[IO](currencyRepository)
+    val dollarClient = DollarSiClient[IO](url, HttpGateway(), new entity.Clock())
+    val currencyRepository = CurrencyRestRepository[IO](dollarClient)
 
-  TaglessMain
-    .run()
-    .unsafeRunSync()
+    implicit val currencyService = CurrencyService[IO](currencyRepository)
 
-}
+    val currencyRoutes = CurrencyEndpoint[IO](currencyService).routes
 
-trait Console[F[_]] {
-  def putStrLn(line: String): F[Unit]
 
-  def getStrLn: F[String]
-}
-
-object Console {
-  def apply[F[_]](implicit F: Console[F]): Console[F] = F
-}
-
-class LiveConsole[F[_] : Sync] extends Console[F] {
-  def putStrLn(line: String): F[Unit] =
-    Sync[F].pure(println(line))
-
-  def getStrLn: F[String] =
-    Sync[F].pure(scala.io.StdIn.readLine())
-}
-
-object TaglessMain {
-  def run[F[_] : Monad : Console : CurrencyService](): F[Unit] = {
-
-    for {
-      response <- CurrencyService[F].getCurrencyExchange(Dollar.id, ArgentinePeso.id)
-      _ <- Console[F].putStrLn(response.toString)
-    } yield ()
+    BlazeServerBuilder[IO]
+      .bindHttp(8085, "localhost")
+      .withHttpApp(currencyRoutes)
+      .resource
+      .use(_ => IO.never)
+      .as(ExitCode.Success)
   }
+
 }
-
-

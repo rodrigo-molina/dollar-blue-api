@@ -1,9 +1,10 @@
 package rodrigomolina.dolarblue.core.usecase
 
+import cats.Monad
+import rodrigomolina.dolarblue.core.entity.{CurrencyExchange, CurrencyId}
 import rodrigomolina.dolarblue.core.port.{CurrencyRepository, CurrencyRepositoryError}
-import rodrigomolina.dolarblue.core.{CurrencyExchange, CurrencyId}
 
-case class CurrencyService[F[_]](currencyRepository: CurrencyRepository[F]) {
+case class CurrencyService[F[_]: Monad](currencyRepository: CurrencyRepository[F]) {
 
   def getCurrencyExchange(from: CurrencyId, to: CurrencyId): F[Either[CurrencyRepositoryError, CurrencyExchange]] = currencyRepository.getCurrencyExchange(from, to)
 }

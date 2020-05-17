@@ -1,6 +1,7 @@
 package rodrigomolina.dolarblue.core.port
 
-import rodrigomolina.dolarblue.core.{CurrencyExchange, CurrencyId}
+import cats.Monad
+import rodrigomolina.dolarblue.core.entity.{CurrencyExchange, CurrencyId}
 
 trait CurrencyRepository[F[_]] {
 
